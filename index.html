@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Детектор синтетических изображений</title>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.8/dist/tf-tflite.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.10/dist/tf-tflite.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
     #preview { max-width: 300px; margin: 20px; }
@@ -29,7 +29,6 @@
     // Загрузка TFLite модели
     async function loadModel() {
       try {
-        // Проверка наличия tflite
         if (typeof tflite === 'undefined') {
           throw new Error('Библиотека tfjs-tflite не загружена. Проверьте подключение скрипта.');
         }
@@ -63,13 +62,22 @@
           const r = (imageData[idx] / 255.0 - 0.485) / 0.229;     // R
           const g = (imageData[idx + 1] / 255.0 - 0.456) / 0.224; // G
           const b = (imageData[idx + 2] / 255.0 - 0.406) / 0.225; // B
+          // Проверка на NaN или бесконечности
+          if (isNaN(r) || isNaN(g) || isNaN(b) || !isFinite(r) || !isFinite(g) || !isFinite(b)) {
+            throw new Error('Invalid input values detected in preprocessing');
+          }
           // Помещаем в NCHW: [0, c, y, x]
           input[0 * 3 * 224 * 224 + 0 * 224 * 224 + y * 224 + x] = r; // R канал
           input[0 * 3 * 224 * 224 + 1 * 224 * 224 + y * 224 + x] = g; // G канал
           input[0 * 3 * 224 * 224 + 2 * 224 * 224 + y * 224 + x] = b; // B канал
         }
       }
-      return tf.tensor4d(input, [1, 3, 224, 224]);
+      const tensor = tf.tensor4d(input, [1, 3, 224, 224]);
+      // Отладочный вывод
+      console.log('Tensor shape:', tensor.shape);
+      console.log('Tensor min:', tensor.min().dataSync()[0]);
+      console.log('Tensor max:', tensor.max().dataSync()[0]);
+      return tensor;
     }
 
     // Классификация изображения
