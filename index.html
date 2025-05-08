@@ -56,14 +56,14 @@
       const imageData = ctx.getImageData(0, 0, 224, 224).data;
       
       // Нормализация для MobileNetV3: [0,1] -> [-1,1] с учётом средних и стандартных отклонений
-      const input = new Float32Array(1 * 224 * 224 * 3);
+      const input = new Float32Array(1 * 3 * 224 * 224);
       for (let i = 0, j = 0; i < imageData.length; i += 4, j += 3) {
         // R, G, B нормализация
         input[j] = ((imageData[i] / 255.0) - 0.485) / 0.229;     // R
         input[j + 1] = ((imageData[i + 1] / 255.0) - 0.456) / 0.224; // G
         input[j + 2] = ((imageData[i + 2] / 255.0) - 0.406) / 0.225; // B
       }
-      return tf.tensor4d(input, [1, 224, 224, 3]);
+      return tf.tensor4d(input, [1, 3, 224, 224]);
     }
 
     // Классификация изображения
