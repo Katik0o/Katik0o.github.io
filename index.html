@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Детектор синтетических изображений</title>
   <script src="https://cdn.jsdelivr.net/npm/onnxjs/dist/onnx.min.js"></script>
+
   <style>
     body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
     #preview { max-width: 300px; margin: 20px; }
@@ -29,7 +30,7 @@
     async function loadModel() {
       try {
         session = new onnx.InferenceSession();
-        await session.loadModel('https://katik0o.github.io/models/detector_simplified.onnx'); 
+        await session.loadModel('https://katik0o.github.io/models/detector.tflite'); 
         isModelLoaded = true;
         result.textContent = 'Модель загружена. Выберите изображение для анализа.';
         console.log('Модель успешно загружена');
