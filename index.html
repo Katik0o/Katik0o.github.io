@@ -29,6 +29,10 @@
     // Загрузка TFLite модели
     async function loadModel() {
       try {
+        // Проверка наличия tflite
+        if (typeof tflite === 'undefined') {
+          throw new Error('Библиотека tfjs-tflite не загружена. Проверьте подключение скрипта.');
+        }
         const tfliteModel = await tflite.loadTFLiteModel('/models/detector.tflite');
         model = tfliteModel;
         isModelLoaded = true;
