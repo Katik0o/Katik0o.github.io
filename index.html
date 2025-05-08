@@ -29,7 +29,7 @@
     async function loadModel() {
       try {
         session = new onnx.InferenceSession();
-        await session.loadModel('https://katik0o.github.io/detector.onnx'); 
+        await session.loadModel('https://katik0o.github.io/models/detector_simplified.onnx'); 
         isModelLoaded = true;
         result.textContent = 'Модель загружена. Выберите изображение для анализа.';
         console.log('Модель успешно загружена');
