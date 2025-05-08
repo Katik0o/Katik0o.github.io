@@ -64,7 +64,7 @@
           const b = (imageData[idx + 2] / 255.0 - 0.406) / 0.225; // B
           // Проверка на NaN или бесконечности
           if (isNaN(r) || isNaN(g) || isNaN(b) || !isFinite(r) || !isFinite(g) || !isFinite(b)) {
-            throw new Error('Invalid input values detected in preprocessing');
+            throw new Error(`Invalid input values at pixel (${x}, ${y}): R=${r}, G=${g}, B=${b}`);
           }
           // Помещаем в NCHW: [0, c, y, x]
           input[0 * 3 * 224 * 224 + 0 * 224 * 224 + y * 224 + x] = r; // R канал
@@ -77,6 +77,7 @@
       console.log('Tensor shape:', tensor.shape);
       console.log('Tensor min:', tensor.min().dataSync()[0]);
       console.log('Tensor max:', tensor.max().dataSync()[0]);
+      console.log('Sample values:', input.slice(0, 10)); // Первые 10 значений
       return tensor;
     }
 
@@ -86,7 +87,9 @@
         throw new Error('Модель ещё не загружена. Пожалуйста, подождите.');
       }
       // Выполнение предсказания
+      console.log('Starting model prediction...');
       const output = await model.predict(input);
+      console.log('Prediction completed:', output);
       const probabilities = output.dataSync();
       input.dispose(); // Освобождение памяти
       return probabilities[1]; // Вероятность класса FAKE
