@@ -29,9 +29,7 @@
     // Загрузка TFLite модели
     async function loadModel() {
       try {
-        const tfliteModel = await tflite.Interpreter.create({
-          modelUrl: '/models/detector.tflite' 
-        });
+        const tfliteModel = await tflite.loadTFLiteModel('/models/detector.tflite');
         model = tfliteModel;
         isModelLoaded = true;
         result.textContent = 'Модель загружена. Выберите изображение для анализа.';
@@ -49,16 +47,19 @@
       canvas.height = 224;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(image, 0, 0, 224, 224);
+      
+      // Получение пиксельных данных
       const imageData = ctx.getImageData(0, 0, 224, 224).data;
-
-      // Нормализация для TFLite ([0,1] -> [-1,1])
-      const input = new Float32Array(224 * 224 * 3);
+      
+      // Нормализация для MobileNetV3: [0,1] -> [-1,1] с учётом средних и стандартных отклонений
+      const input = new Float32Array(1 * 224 * 224 * 3);
       for (let i = 0, j = 0; i < imageData.length; i += 4, j += 3) {
-        input[j] = (imageData[i] / 127.5) - 1.0;     // R
-        input[j + 1] = (imageData[i + 1] / 127.5) - 1.0; // G
-        input[j + 2] = (imageData[i + 2] / 127.5) - 1.0; // B
+        // R, G, B нормализация
+        input[j] = ((imageData[i] / 255.0) - 0.485) / 0.229;     // R
+        input[j + 1] = ((imageData[i + 1] / 255.0) - 0.456) / 0.224; // G
+        input[j + 2] = ((imageData[i + 2] / 255.0) - 0.406) / 0.225; // B
       }
-      return input;
+      return tf.tensor4d(input, [1, 224, 224, 3]);
     }
 
     // Классификация изображения
@@ -66,12 +67,11 @@
       if (!isModelLoaded || !model) {
         throw new Error('Модель ещё не загружена. Пожалуйста, подождите.');
       }
-      const inputTensor = new Float32Array(input);
-      model.setInputTensor(0, inputTensor);
-      model.invoke();
-      const outputTensor = model.getOutputTensor(0);
-      const probability = outputTensor[1]; // [real, fake]
-      return probability;
+      // Выполнение предсказания
+      const output = await model.predict(input);
+      const probabilities = output.dataSync();
+      input.dispose(); // Освобождение памяти
+      return probabilities[1]; // Вероятность класса FAKE
     }
 
     // Обработка загрузки изображения
