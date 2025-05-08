@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Детектор синтетических изображений</title>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.10/dist/tf-tflite.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.11/dist/tf-tflite.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
     #preview { max-width: 300px; margin: 20px; }
@@ -29,9 +29,11 @@
     // Загрузка TFLite модели
     async function loadModel() {
       try {
+        // Проверка наличия tflite
         if (typeof tflite === 'undefined') {
           throw new Error('Библиотека tfjs-tflite не загружена. Проверьте подключение скрипта.');
         }
+        console.log('Loading TFLite model...');
         const tfliteModel = await tflite.loadTFLiteModel('/models/detector.tflite');
         model = tfliteModel;
         isModelLoaded = true;
@@ -77,7 +79,7 @@
       console.log('Tensor shape:', tensor.shape);
       console.log('Tensor min:', tensor.min().dataSync()[0]);
       console.log('Tensor max:', tensor.max().dataSync()[0]);
-      console.log('Sample values:', input.slice(0, 10)); // Первые 10 значений
+      console.log('Sample values:', input.slice(0, 10));
       return tensor;
     }
 
@@ -86,7 +88,6 @@
       if (!isModelLoaded || !model) {
         throw new Error('Модель ещё не загружена. Пожалуйста, подождите.');
       }
-      // Выполнение предсказания
       console.log('Starting model prediction...');
       const output = await model.predict(input);
       console.log('Prediction completed:', output);
@@ -119,8 +120,15 @@
       };
     });
 
-    // Инициализация модели
-    loadModel();
+    // Проверка загрузки WebAssembly
+    console.log('Checking WebAssembly support...');
+    if (typeof WebAssembly === 'undefined') {
+      result.textContent = 'Ошибка: WebAssembly не поддерживается в этом браузере.';
+      console.error('WebAssembly не поддерживается');
+    } else {
+      console.log('WebAssembly поддерживается');
+      loadModel();
+    }
   </script>
 </body>
 </html>
