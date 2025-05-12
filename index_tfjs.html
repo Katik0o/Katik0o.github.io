@@ -43,12 +43,13 @@
       canvas.height = 224;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(image, 0, 0, 224, 224);
-      const tensor = tf.browser.fromPixels(canvas)
+      let tensor = tf.browser.fromPixels(canvas)
         .toFloat()
         .div(255.0)
         .sub(tf.tensor([0.485, 0.456, 0.406]))
         .div(tf.tensor([0.229, 0.224, 0.225]))
-        .expandDims();
+        .expandDims(); // [1, 224, 224, 3]
+      tensor = tf.transpose(tensor, [0, 3, 1, 2]); // [1, 3, 224, 224]
       console.log('Tensor shape:', tensor.shape);
       console.log('Tensor min:', tensor.min().dataSync()[0]);
       console.log('Tensor max:', tensor.max().dataSync()[0]);
@@ -61,7 +62,7 @@
       console.log('Starting model prediction...');
       const output = model.predict(input);
       const probabilities = output.softmax();
-      const probabilityArray = await probabilities.data(); // Извлекаем данные
+      const probabilityArray = await probabilities.data();
       input.dispose();
       probabilities.dispose();
       const fakeProbability = probabilityArray[1]; // FAKE
