@@ -6,7 +6,7 @@
   <title>Детектор синтетических изображений</title>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js"></script>
   <script
-    src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.8/dist/tf-tflite.min.js"
+    src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.10/dist/tf-tflite.min.js"
     onload="console.log('tf-tflite.min.js loaded successfully')"
     onerror="console.error('Failed to load tf-tflite.min.js')"
   ></script>
@@ -33,7 +33,6 @@
     // Загрузка TFLite модели
     async function loadModel() {
       try {
-        // Проверка наличия tflite
         if (typeof tflite === 'undefined') {
           throw new Error('Библиотека tfjs-tflite не загружена. Проверьте подключение скрипта.');
         }
@@ -64,26 +63,29 @@
       const input = new Float32Array(1 * 3 * 224 * 224);
       for (let y = 0; y < 224; y++) {
         for (let x = 0; x < 224; x++) {
-          const idx = (y * 224 + x) * 4; // Индекс в imageData
-          const r = (imageData[idx] / 255.0 - 0.485) / 0.229;     // R
-          const g = (imageData[idx + 1] / 255.0 - 0.456) / 0.224; // G
-          const b = (imageData[idx + 2] / 255.0 - 0.406) / 0.225; // B
-          // Проверка на NaN или бесконечности
+          const idx = (y * 224 + x) * 4;
+          const r = (imageData[idx] / 255.0 - 0.485) / 0.229;
+          const g = (imageData[idx + 1] / 255.0 - 0.456) / 0.224;
+          const b = (imageData[idx + 2] / 255.0 - 0.406) / 0.225;
           if (isNaN(r) || isNaN(g) || isNaN(b) || !isFinite(r) || !isFinite(g) || !isFinite(b)) {
             throw new Error(`Invalid input values at pixel (${x}, ${y}): R=${r}, G=${g}, B=${b}`);
           }
-          // Помещаем в NCHW: [0, c, y, x]
-          input[0 * 3 * 224 * 224 + 0 * 224 * 224 + y * 224 + x] = r; // R канал
-          input[0 * 3 * 224 * 224 + 1 * 224 * 224 + y * 224 + x] = g; // G канал
-          input[0 * 3 * 224 * 224 + 2 * 224 * 224 + y * 224 + x] = b; // B канал
+          input[0 * 3 * 224 * 224 + 0 * 224 * 224 + y * 224 + x] = r;
+          input[0 * 3 * 224 * 224 + 1 * 224 * 224 + y * 224 + x] = g;
+          input[0 * 3 * 224 * 224 + 2 * 224 * 224 + y * 224 + x] = b;
         }
       }
       const tensor = tf.tensor4d(input, [1, 3, 224, 224]);
-      // Отладочный вывод
+      // Детализированная отладка
       console.log('Tensor shape:', tensor.shape);
-      console.log('Tensor min:', tensor.min().dataSync()[0]);
-      console.log('Tensor max:', tensor.max().dataSync()[0]);
+      const min = tensor.min().dataSync()[0];
+      const max = tensor.max().dataSync()[0];
+      console.log('Tensor min:', min);
+      console.log('Tensor max:', max);
       console.log('Sample values:', input.slice(0, 10));
+      if (min < -10 || max > 10) {
+        console.warn('Warning: Tensor values out of expected range [-10, 10]');
+      }
       return tensor;
     }
 
@@ -96,7 +98,7 @@
       const output = await model.predict(input);
       console.log('Prediction completed:', output);
       const probabilities = output.dataSync();
-      input.dispose(); // Освобождение памяти
+      input.dispose();
       return probabilities[1]; // Вероятность класса FAKE
     }
 
@@ -105,7 +107,6 @@
       const file = e.target.files[0];
       if (!file) return;
 
-      // Предпросмотр
       preview.src = URL.createObjectURL(file);
       preview.onload = async () => {
         if (!isModelLoaded) {
