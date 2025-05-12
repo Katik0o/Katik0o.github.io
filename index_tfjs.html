@@ -73,18 +73,16 @@
       return tensor;
     }
 
-    // Классификация изображения
-    async function classifyImage(input) {
-      if (!isModelLoaded || !model) {
-        throw new Error('Модель ещё не загружена. Пожалуйста, подождите.');
-      }
-      console.log('Starting model prediction...');
-      const output = await model.predict(input);
-      console.log('Prediction completed:', output);
-      const probabilities = output.dataSync();
-      input.dispose();
-      return probabilities[1]; // Вероятность класса FAKE
-    }
+   async function classifyImage(input) {
+  if (!model) throw new Error('Модель ещё не загружена.');
+  const output = model.predict(input);
+  const probabilities = output.softmax();
+  const probabilityArray = await probabilities.data(); // Асинхронно извлекаем данные
+  input.dispose();
+  probabilities.dispose(); // Освобождаем память
+  const fakeProbability = probabilityArray[1]; // FAKE вероятность
+  return fakeProbability;
+}
 
     // Обработка загрузки изображения
     input.addEventListener('change', async (e) => {
