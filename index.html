@@ -6,7 +6,7 @@
   <title>Детектор синтетических изображений</title>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js"></script>
   <script
-    src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.10/dist/tf-tflite.min.js"
+    src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.11/dist/tf-tflite.min.js"
     onload="console.log('tf-tflite.min.js loaded successfully')"
     onerror="console.error('Failed to load tf-tflite.min.js')"
   ></script>
@@ -37,7 +37,11 @@
           throw new Error('Библиотека tfjs-tflite не загружена. Проверьте подключение скрипта.');
         }
         console.log('Loading TFLite model...');
-        const tfliteModel = await tflite.loadTFLiteModel('/models/detector.tflite');
+        // Отключение XNNPACK
+        const tfliteModel = await tflite.loadTFLiteModel('/models/detector.tflite', {
+          numThreads: 1,
+          useXnnpack: false
+        });
         model = tfliteModel;
         isModelLoaded = true;
         result.textContent = 'Модель загружена. Выберите изображение для анализа.';
